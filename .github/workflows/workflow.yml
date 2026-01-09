@@ -7,10 +7,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # --- DEBUG: List files to ensure code is there ---
-      - name: List Files
-        run: ls -R
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -32,16 +28,23 @@ jobs:
           pip install --upgrade pip
           pip install flet yt-dlp cookiecutter packaging
       
-      # --- CRITICAL FIX: Generate requirements.txt automatically ---
-      - name: Force Create Requirements
+      # --- CRITICAL FIX 1: Rename app.py to main.py ---
+      # Flet requires the file to be named 'main.py' to build correctly.
+      - name: Prepare File Structure
+        run: |
+          mv app.py main.py || echo "main.py already exists or app.py missing"
+          ls -R  # Check files to verify main.py is there
+
+      # --- CRITICAL FIX 2: Create requirements.txt ---
+      - name: Create Requirements
         run: |
           echo "flet" > requirements.txt
           echo "yt-dlp" >> requirements.txt
-          cat requirements.txt
 
       - name: Build APK
+        # Added -vv to see exactly why it fails if it happens again
         run: |
-          flet build apk --verbose
+          flet build apk -vv
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
