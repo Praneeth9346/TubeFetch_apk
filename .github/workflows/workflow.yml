@@ -7,41 +7,55 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # --- FIX 1: Use Python 3.10 (Most stable for Android builds) ---
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
+      # --- DEBUG STEP: See what files are actually there ---
+      - name: List Files (Debug)
+        run: ls -R
 
-      # --- FIX 2: Setup Java 17 (Required for Gradle) ---
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.22.0"
 
-      - name: Install Build Dependencies
+      - name: Install Build Tools
         run: |
           pip install --upgrade pip
           pip install flet yt-dlp cookiecutter packaging
-      
-      # --- FIX 3: Ensure requirements.txt exists and is clean ---
-      - name: Prepare Requirements
+
+      # --- FIX 1: Rename app.py to main.py if needed ---
+      - name: Ensure main.py exists
         run: |
-          # We overwrite the file to ensure no hidden characters break the build
+          if [ -f "app.py" ]; then
+            echo "Renaming app.py to main.py for Flet build..."
+            mv app.py main.py
+          elif [ ! -f "main.py" ]; then
+            echo "ERROR: Neither main.py nor app.py found!"
+            ls -la
+            exit 1
+          fi
+
+      # --- FIX 2: Create requirements.txt automatically ---
+      - name: Generate requirements.txt
+        run: |
           echo "flet" > requirements.txt
           echo "yt-dlp" >> requirements.txt
+          # Verify it was created
+          cat requirements.txt
 
       - name: Build APK
-        # We use 'python -m flet' to avoid PATH issues
-        # We use -vv to see the exact error if it fails
         run: |
-          python -m flet build apk --verbose
+          # The -vv flag gives us more details if it crashes
+          flet build apk --verbose
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
