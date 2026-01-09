@@ -1,0 +1,47 @@
+name: Build Android APK
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- FIX 1: Setup Java 17 (Required for Android Gradle) ---
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # --- FIX 2: Install dependencies explicitly ---
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install flet yt-dlp
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.22.0"
+
+      # --- FIX 3: Accept Android Licenses (Prevents silent failures) ---
+      - name: Accept Android Licenses
+        run: |
+          yes | flutter doctor --android-licenses || true
+          
+      - name: Flet Build APK
+        # Added -vv for extra verbose logs in case it fails again
+        run: |
+          flet build apk --verbose
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tubefetch-app
+          path: build/apk/app-release.apk
