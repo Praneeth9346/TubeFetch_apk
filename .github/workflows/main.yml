@@ -19,30 +19,23 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "3.22.0"
-
-      # --- INSTALL BUILD TOOLS ---
-      - name: Install Dependencies
+      # --- INSTALL DEPENDENCIES ---
+      - name: Install Build Tools
         run: |
           pip install --upgrade pip
           pip install flet yt-dlp cookiecutter packaging
 
-      # --- CRITICAL: Ensure requirements.txt exists ---
-      # Flet looks at this file to know what to put inside the APK
+      # --- REQUIREMENTS ---
       - name: Create requirements.txt
         run: |
           echo "flet" > requirements.txt
           echo "yt-dlp" >> requirements.txt
 
-      # --- BUILD APK ---
+      # --- BUILD APK (THE FIX) ---
       - name: Build APK
         run: |
-          # REMOVED the invalid flag "--include-packages"
-          # The builder will automatically read requirements.txt created above
-          flet build apk --verbose
+          # We pipe "yes" into the command so it auto-accepts the SDK download
+          yes | flet build apk --verbose
 
       # --- UPLOAD ---
       - name: Upload APK
