@@ -1,0 +1,46 @@
+name: Build Android APK
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Get your code
+      - uses: actions/checkout@v4
+
+      # 2. Set up Java 17 (Required for Android)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. Set up Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 4. Set up Flutter (The engine behind Flet)
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.22.0"
+
+      # 5. Install Dependencies
+      - name: Install Tools
+        run: |
+          pip install --upgrade pip
+          pip install flet yt-dlp cookiecutter packaging
+
+      # 6. Build the APK
+      - name: Build APK
+        run: |
+          flet build apk --verbose --include-packages yt-dlp
+
+      # 7. Upload the result so you can download it
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tube-fetch-app
+          path: build/apk/app-release.apk
