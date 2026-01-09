@@ -7,44 +7,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # --- FIX 1: Use Python 3.10 (Most stable for Android builds) ---
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # --- FIX 2: Setup Java 17 (Required for Gradle) ---
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.22.0"
 
-      - name: Install Build Tools
+      - name: Install Build Dependencies
         run: |
           pip install --upgrade pip
           pip install flet yt-dlp cookiecutter packaging
       
-      # --- CRITICAL FIX 1: Rename app.py to main.py ---
-      # Flet requires the file to be named 'main.py' to build correctly.
-      - name: Prepare File Structure
+      # --- FIX 3: Ensure requirements.txt exists and is clean ---
+      - name: Prepare Requirements
         run: |
-          mv app.py main.py || echo "main.py already exists or app.py missing"
-          ls -R  # Check files to verify main.py is there
-
-      # --- CRITICAL FIX 2: Create requirements.txt ---
-      - name: Create Requirements
-        run: |
+          # We overwrite the file to ensure no hidden characters break the build
           echo "flet" > requirements.txt
           echo "yt-dlp" >> requirements.txt
 
       - name: Build APK
-        # Added -vv to see exactly why it fails if it happens again
+        # We use 'python -m flet' to avoid PATH issues
+        # We use -vv to see the exact error if it fails
         run: |
-          flet build apk -vv
+          python -m flet build apk --verbose
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
