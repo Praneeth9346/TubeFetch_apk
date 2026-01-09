@@ -7,7 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # --- FIX 1: Setup Java 17 (Required for Android Gradle) ---
+      # --- DEBUG: List files to ensure code is there ---
+      - name: List Files
+        run: ls -R
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -19,24 +22,24 @@ jobs:
         with:
           python-version: "3.11"
 
-      # --- FIX 2: Install dependencies explicitly ---
-      - name: Install Python Dependencies
-        run: |
-          pip install --upgrade pip
-          pip install flet yt-dlp
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.22.0"
 
-      # --- FIX 3: Accept Android Licenses (Prevents silent failures) ---
-      - name: Accept Android Licenses
+      - name: Install Build Tools
         run: |
-          yes | flutter doctor --android-licenses || true
-          
-      - name: Flet Build APK
-        # Added -vv for extra verbose logs in case it fails again
+          pip install --upgrade pip
+          pip install flet yt-dlp cookiecutter packaging
+      
+      # --- CRITICAL FIX: Generate requirements.txt automatically ---
+      - name: Force Create Requirements
+        run: |
+          echo "flet" > requirements.txt
+          echo "yt-dlp" >> requirements.txt
+          cat requirements.txt
+
+      - name: Build APK
         run: |
           flet build apk --verbose
 
